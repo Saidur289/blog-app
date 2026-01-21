@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { postService } from "./post.service";
 import { boolean, date, string } from "better-auth/*";
 import { PostStatus } from "../../../generated/prisma/enums";
+import paginationSortHelper from "../../helpers/paginationSortHelper";
 
 const createPost = async(req: Request, res: Response) => {
     try {
@@ -32,11 +33,18 @@ const getAllPost = async(req: Request, res: Response) => {
     // console.log(status);
     const authorId = req.query.authorId as string
     // console.log(authorId);
-    const result = await postService.getAllPost({search: searchText, tags, isFeatured, status, authorId})
+    // const page = Number(req.query.page as string ?? 1) 
+    // const limit = Number(req.query.limit as string?? 10) 
+    // const skip = (page - 1) * limit as number
+    // const sortBy = req.query.sort as string || "createdAt";
+    // const sortByOrder = req.query.sortByOrder as string || 'desc'
+    const {page, limit, skip, sortBy, sortByOrder} = paginationSortHelper(req.query)
+    // console.log(page, limit, skip, sortBy, sortByOrder, "all query");
+    const result = await postService.getAllPost({search: searchText, tags, isFeatured, status, authorId, page, limit, skip, sortBy , sortByOrder})
     res.status(200).json({
         msg: 'get all post',
         data: result,
-        length: result.length
+        length: result
     })
     }catch (error) {
         res.send({mes: 'error in create post', error})
@@ -44,7 +52,20 @@ const getAllPost = async(req: Request, res: Response) => {
     }
 
 }
+const getPostById = async(req: Request, res: Response) => {
+    const {id} = req.params
+    if(!id){
+        throw new Error("id is not provided")
+    }
+    const result = await postService.getPostById(id as string)
+    console.log(result);
+    res.status(200).json({
+        success: true,
+        data: result
+    })
+}
 export const postController = {
     createPost,
-    getAllPost
+    getAllPost,
+    getPostById
 }
