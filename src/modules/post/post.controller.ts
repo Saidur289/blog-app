@@ -58,6 +58,19 @@ const getPostById = async(req: Request, res: Response) => {
         throw new Error("id is not provided")
     }
     const result = await postService.getPostById(id as string)
+    // console.log(result);
+    res.status(200).json({
+        success: true,
+        data: result
+    })
+}
+const getMyPost = async(req: Request, res: Response) => {
+    const user = req.user
+    // console.log(user);
+    if(!user){
+        throw new Error("Unauthorized")
+    }
+    const result = await postService.getMyPost(user.id as string)
     console.log(result);
     res.status(200).json({
         success: true,
@@ -67,5 +80,6 @@ const getPostById = async(req: Request, res: Response) => {
 export const postController = {
     createPost,
     getAllPost,
-    getPostById
+    getPostById,
+    getMyPost
 }
