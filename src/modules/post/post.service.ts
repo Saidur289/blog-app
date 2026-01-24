@@ -1,3 +1,4 @@
+
 import { CommentStatus, Post, PostStatus } from "../../../generated/prisma/client";
 import { PostWhereInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
@@ -141,9 +142,37 @@ const getMyPost = async(authorId:string) => {
         }
     })
 }
+// condition - 1 user can update all without isFeatured 
+//condition - 2 admin can update all field
+// condition - 3 one cannot update another users post 
+const updatePost = async(postId:string, data: Partial<Post>,isAdmin: boolean, authorId: string) => {
+    const postData = await prisma.post.findUniqueOrThrow({
+        where: {
+            id: postId
+        },
+        
+        select: {
+            id: true,
+            authorId: true
+        }
+    })
+    if(!isAdmin && (postData.authorId !== authorId)){
+        throw new Error("You cannot update others posts")
+    }
+    if(!isAdmin){
+        delete data.isFeatured
+    }
+    return await prisma.post.update({
+        where: {
+            id: postId
+        },
+        data
+    })
+}
 export const postService = {
     createPost,
     getAllPost,
     getPostById,
-    getMyPost
+    getMyPost,
+    updatePost
 }

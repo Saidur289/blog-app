@@ -3,6 +3,7 @@ import { postService } from "./post.service";
 import { boolean, date, string } from "better-auth/*";
 import { PostStatus } from "../../../generated/prisma/enums";
 import paginationSortHelper from "../../helpers/paginationSortHelper";
+import { UserRole } from "../../middleware/auth";
 
 const createPost = async(req: Request, res: Response) => {
     try {
@@ -16,9 +17,12 @@ const createPost = async(req: Request, res: Response) => {
        }
        const result = await postService.createPost(req.body, user.id)
        res.status(201).json(result)
-    } catch (error) {
-        res.send({mes: 'error in create post', error})
-        
+    } catch (e) {
+          const errorMessage = e instanceof Error? e.message : 'error in create post'
+    res.status(400).json({
+       msg: errorMessage,
+       details:e
+    })  
     }
 }
 const getAllPost = async(req: Request, res: Response) => {
@@ -53,7 +57,8 @@ const getAllPost = async(req: Request, res: Response) => {
 
 }
 const getPostById = async(req: Request, res: Response) => {
-    const {id} = req.params
+   try{
+     const {id} = req.params
     if(!id){
         throw new Error("id is not provided")
     }
@@ -63,6 +68,13 @@ const getPostById = async(req: Request, res: Response) => {
         success: true,
         data: result
     })
+   }
+   catch(e){
+    const errorMessage = e instanceof Error? e.message : 'fail get post'
+    res.status(400).json({
+       e: errorMessage
+    })
+   }
 }
 const getMyPost = async(req: Request, res: Response) => {
     const user = req.user
@@ -77,9 +89,34 @@ const getMyPost = async(req: Request, res: Response) => {
         data: result
     })
 }
+const updatePost = async(req: Request, res: Response) => {
+   try{
+     const {postId} = req.params
+    const user = req.user
+    // console.log(user);
+    if(!user){
+        throw new Error("Unauthorized")
+    }
+    const isAdmin = user.role === UserRole.ADMIN 
+    const result = await postService.updatePost(postId as string, req.body, isAdmin, user.id )
+    console.log(result);
+    res.status(200).json({
+        success: true,
+        data: result
+    })
+   }
+      catch(e){
+    const errorMessage = e instanceof Error? e.message : 'fail get post'
+    res.status(400).json({
+       msg: errorMessage,
+       details:e
+    })
+   }
+}
 export const postController = {
     createPost,
     getAllPost,
     getPostById,
-    getMyPost
+    getMyPost,
+    updatePost
 }
