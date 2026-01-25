@@ -169,10 +169,35 @@ const updatePost = async(postId:string, data: Partial<Post>,isAdmin: boolean, au
         data
     })
 }
+const deletePost = async(postId:string, data: Partial<Post>,isAdmin: boolean, authorId: string) => {
+    const postData = await prisma.post.findUniqueOrThrow({
+        where: {
+            id: postId
+        },
+        
+        select: {
+            id: true,
+            authorId: true
+        }
+    })
+    if(!isAdmin && (postData.authorId !== authorId)){
+        throw new Error("You cannot delete others posts")
+    }
+    if(!isAdmin){
+        delete data.isFeatured
+    }
+    return await prisma.post.delete({
+        where: {
+            id: postId
+        },
+       
+    })
+}
 export const postService = {
     createPost,
     getAllPost,
     getPostById,
     getMyPost,
-    updatePost
+    updatePost,
+    deletePost
 }

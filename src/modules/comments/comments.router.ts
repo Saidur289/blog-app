@@ -9,5 +9,6 @@ router.get("/:commentId", auth(UserRole.USER, UserRole.ADMIN),  CommentsControll
 router.get("/author/:authorId", auth(UserRole.USER, UserRole.ADMIN),  CommentsController.getCommentByIdAuthor)
 router.patch("/:commentId", auth(UserRole.USER, UserRole.ADMIN),  CommentsController.updateComment)
 router.delete("/:commentId", auth(UserRole.USER, UserRole.ADMIN),  CommentsController.deleteComment)
+router.patch("/:commentId/moderate", auth(UserRole.ADMIN), CommentsController.moderateComment)
 
 export const CommentsRouter = router

@@ -86,10 +86,27 @@ const deleteComment = async(req: Request, res: Response) => {
         
     }
 }
+const moderateComment = async(req: Request, res: Response) => {
+    try {
+    
+    const {commentId} = req.params 
+    // console.log(req.body);
+    const result = await CommentsService.moderateComment(commentId as string,  req.body)
+       res.status(201).json({
+        msg: "status updated successfully",
+        data: result
+       })
+    } catch (error) {
+        console.log(error);
+        res.send({mes: 'error in get comments', error})
+        
+    }
+}
 export const CommentsController = {
     createComment,
     getCommentById,
     getCommentByIdAuthor,
     updateComment,
-    deleteComment
+    deleteComment,
+    moderateComment
 }
