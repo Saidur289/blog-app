@@ -1,9 +1,10 @@
 
-import { CommentStatus, Post, PostStatus } from "../../../generated/prisma/client";
-import { PostWhereInput } from "../../../generated/prisma/models";
+import { CommentStatus, Post, PostStatus } from "../../generated/prisma/client";
+import { PostWhereInput } from "../../generated/prisma/models";
+
 import { prisma } from "../../lib/prisma";
 
-const createPost = async(data: Omit<Post, 'id'|'createdAt'| 'updatedAt'| 'authorId'>, userId: string) => {
+const createPost = async (data: Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'authorId'>, userId: string) => {
     const result = await prisma.post.create({
         data: {
             ...data,
@@ -12,49 +13,49 @@ const createPost = async(data: Omit<Post, 'id'|'createdAt'| 'updatedAt'| 'author
     })
     return result;
 }
-const getAllPost = async({search, tags, isFeatured, status, authorId, page, limit, skip, sortBy, sortByOrder}:{search?: string |undefined, tags: string[], isFeatured: boolean|undefined , status: PostStatus, authorId: string, page: number, limit: number, skip: number, sortBy: string, sortByOrder: string}) => {
-    const andCondition : PostWhereInput[] = []
-    if(search){
+const getAllPost = async ({ search, tags, isFeatured, status, authorId, page, limit, skip, sortBy, sortByOrder }: { search?: string | undefined, tags: string[], isFeatured: boolean | undefined, status: PostStatus, authorId: string, page: number, limit: number, skip: number, sortBy: string, sortByOrder: string }) => {
+    const andCondition: PostWhereInput[] = []
+    if (search) {
         andCondition.push({
-          OR: [
-            {
-                title: {
-                    contains: search as string,
-                    mode: 'insensitive',
+            OR: [
+                {
+                    title: {
+                        contains: search as string,
+                        mode: 'insensitive',
+                    },
                 },
-            },
-            {
-                content: {
-                    contains: search as string,
-                    mode: 'insensitive'
+                {
+                    content: {
+                        contains: search as string,
+                        mode: 'insensitive'
+                    }
+                },
+                {
+                    tags: {
+                        has: search as string
+                    }
                 }
-            },
-            {
-                tags: {
-                    has: search as string
-                }
-            }
-          ]
+            ]
         })
     }
-    if(tags.length > 0){
+    if (tags.length > 0) {
         andCondition.push({
             tags: {
                 hasEvery: tags
             }
         })
     }
-    if(typeof isFeatured === 'boolean'){
+    if (typeof isFeatured === 'boolean') {
         andCondition.push({
             isFeatured
         })
     }
-    if(status){
+    if (status) {
         andCondition.push({
             status
         })
     }
-    if(authorId){
+    if (authorId) {
         andCondition.push({
             authorId
         })
@@ -65,7 +66,7 @@ const getAllPost = async({search, tags, isFeatured, status, authorId, page, limi
         where: {
             AND: andCondition
         },
-        orderBy:{
+        orderBy: {
             [sortBy]: sortByOrder
         }
     })
@@ -78,63 +79,63 @@ const getAllPost = async({search, tags, isFeatured, status, authorId, page, limi
         data: result,
         page: page,
         totalPosts: totalPosts,
-        totalPage: Math.ceil(totalPosts/limit)
+        totalPage: Math.ceil(totalPosts / limit)
     }
 }
-const getPostById = async(id: string) => {
-   
-  const postData =    await prisma.$transaction(async(tx) => {
-      await tx.post.update({
-        where: {
-            id: id
-        },
-        data: {
-            views: {
-                increment: 1
-            }
-        },
-       
-    })
-    const result = await prisma.post.findUnique({
-        where: {
-            id: id
-        },
-         include: {
-            comment: {
-                where: {
-                    parentId: null,
-                    status: CommentStatus.APPROVED
-                },
-                orderBy: {createdAt: "desc"},
-                include: {
-                    replies: {
-                        where: {
-                            status: CommentStatus.APPROVED
-                        },
-                        orderBy: {createdAt: 'asc'},
-                        include: {
-                         replies: {
-                            where: {
-                                status: CommentStatus.APPROVED,
-                            },
-                            orderBy: {createdAt: 'asc'},
-                         }
-                        }
-                    }
+const getPostById = async (id: string) => {
+
+    const postData = await prisma.$transaction(async (tx) => {
+        await tx.post.update({
+            where: {
+                id: id
+            },
+            data: {
+                views: {
+                    increment: 1
                 }
             },
-            _count: {
-                select: {
-                    comment: true
+
+        })
+        const result = await prisma.post.findUnique({
+            where: {
+                id: id
+            },
+            include: {
+                comment: {
+                    where: {
+                        parentId: null,
+                        status: CommentStatus.APPROVED
+                    },
+                    orderBy: { createdAt: "desc" },
+                    include: {
+                        replies: {
+                            where: {
+                                status: CommentStatus.APPROVED
+                            },
+                            orderBy: { createdAt: 'asc' },
+                            include: {
+                                replies: {
+                                    where: {
+                                        status: CommentStatus.APPROVED,
+                                    },
+                                    orderBy: { createdAt: 'asc' },
+                                }
+                            }
+                        }
+                    }
+                },
+                _count: {
+                    select: {
+                        comment: true
+                    }
                 }
             }
-        }
-    })
-    return result
+        })
+        return result
     })
     return postData
 }
-const getMyPost = async(authorId:string) => {
+const getMyPost = async (authorId: string) => {
     console.log(authorId);
     return await prisma.post.findMany({
         where: {
@@ -145,21 +146,21 @@ const getMyPost = async(authorId:string) => {
 // condition - 1 user can update all without isFeatured 
 //condition - 2 admin can update all field
 // condition - 3 one cannot update another users post 
-const updatePost = async(postId:string, data: Partial<Post>,isAdmin: boolean, authorId: string) => {
+const updatePost = async (postId: string, data: Partial<Post>, isAdmin: boolean, authorId: string) => {
     const postData = await prisma.post.findUniqueOrThrow({
         where: {
             id: postId
         },
-        
+
         select: {
             id: true,
             authorId: true
         }
     })
-    if(!isAdmin && (postData.authorId !== authorId)){
+    if (!isAdmin && (postData.authorId !== authorId)) {
         throw new Error("You cannot update others posts")
     }
-    if(!isAdmin){
+    if (!isAdmin) {
         delete data.isFeatured
     }
     return await prisma.post.update({
@@ -169,28 +170,28 @@ const updatePost = async(postId:string, data: Partial<Post>,isAdmin: boolean, au
         data
     })
 }
-const deletePost = async(postId:string, data: Partial<Post>,isAdmin: boolean, authorId: string) => {
+const deletePost = async (postId: string, data: Partial<Post>, isAdmin: boolean, authorId: string) => {
     const postData = await prisma.post.findUniqueOrThrow({
         where: {
             id: postId
         },
-        
+
         select: {
             id: true,
             authorId: true
         }
     })
-    if(!isAdmin && (postData.authorId !== authorId)){
+    if (!isAdmin && (postData.authorId !== authorId)) {
         throw new Error("You cannot delete others posts")
     }
-    if(!isAdmin){
+    if (!isAdmin) {
         delete data.isFeatured
     }
     return await prisma.post.delete({
         where: {
             id: postId
         },
-       
+
     })
 }
 export const postService = {

@@ -1,14 +1,14 @@
-import { CommentStatus } from "../../../generated/prisma/enums";
+import { CommentStatus } from "../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma"
 
-const createComment = async(payload: {postId: string, parentId?: string, content: string, authorId: string}) => {
+const createComment = async (payload: { postId: string, parentId?: string, content: string, authorId: string }) => {
     console.log(payload);
     await prisma.post.findUniqueOrThrow({
         where: {
-           id: payload.postId 
+            id: payload.postId
         },
     })
-    if(payload.parentId){
+    if (payload.parentId) {
         await prisma.comment.findFirstOrThrow({
             where: {
                 id: payload.parentId
@@ -19,24 +19,24 @@ const createComment = async(payload: {postId: string, parentId?: string, content
         data: payload
     })
 }
-const getCommentById = async(commentId: string) => {
+const getCommentById = async (commentId: string) => {
     // console.log({commentId});
     const result = await prisma.comment.findUnique({
         where: {
             id: commentId
         },
-        include:{
-            post:{
-                select:{
-                    id:true,
-                    title:true
+        include: {
+            post: {
+                select: {
+                    id: true,
+                    title: true
                 }
             }
         }
     })
     return result
 }
-const getCommentByAuthor = async( authorId: string) => {
+const getCommentByAuthor = async (authorId: string) => {
     // console.log({commentId, authorId});
     const commentData = await prisma.comment.findMany({
         where: {
@@ -54,20 +54,20 @@ const getCommentByAuthor = async( authorId: string) => {
     console.log(commentData);
     return commentData
 }
-const updateComment = async(commentId: string, authorId: string, data:{status?: CommentStatus, content?: string}) => {
-    console.log({commentId, authorId, data});
+const updateComment = async (commentId: string, authorId: string, data: { status?: CommentStatus, content?: string }) => {
+    console.log({ commentId, authorId, data });
     const commentData = await prisma.comment.findFirst({
         where: {
             id: commentId,
             authorId
-           
+
         },
-        select:{
+        select: {
             id: true
         }
     })
     // console.log(commentData);
-    if(!commentData){
+    if (!commentData) {
         throw new Error("invalid input")
     }
     return await prisma.comment.update({
@@ -77,22 +77,22 @@ const updateComment = async(commentId: string, authorId: string, data:{status?: 
         },
         data
     })
-    
+
 }
-const deleteComment = async(commentId: string, authorId: string) => {
-     console.log({commentId, authorId});
+const deleteComment = async (commentId: string, authorId: string) => {
+    console.log({ commentId, authorId });
     const commentData = await prisma.comment.findFirst({
         where: {
             id: commentId,
             authorId
-           
+
         },
         select: {
             id: true
         }
     })
     // console.log(commentData);
-    if(!commentData){
+    if (!commentData) {
         throw new Error("invalid input")
     }
     return await prisma.comment.delete({
@@ -100,11 +100,11 @@ const deleteComment = async(commentId: string, authorId: string) => {
             id: commentData.id,
             authorId
         },
-        
+
     })
-    
+
 }
-const moderateComment = async(commentId: string, data: {status: CommentStatus}) => {
+const moderateComment = async (commentId: string, data: { status: CommentStatus }) => {
     const commentData = await prisma.comment.findUniqueOrThrow({
         where: {
             id: commentId
@@ -114,7 +114,7 @@ const moderateComment = async(commentId: string, data: {status: CommentStatus}) 
             status: true
         }
     })
-    if(commentData.status === data.status){
+    if (commentData.status === data.status) {
         throw new Error(`Your comments status is ${data.status} upto date`)
     }
     return await prisma.comment.update({
